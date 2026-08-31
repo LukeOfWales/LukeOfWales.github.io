@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # Keep GitHub Actions versions current (would flag action runtime lag, e.g.
+  # the Node 20 -> 24 change).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
