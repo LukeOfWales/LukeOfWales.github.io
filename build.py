@@ -98,8 +98,12 @@ def pages_url(repo: str) -> str | None:
 
 def gather() -> list[dict]:
     """Return metadata for each public repo with a live Pages site."""
+    # The user-site repo (owner.github.io) hosts this hub itself — don't list it.
+    self_repo = f"{OWNER}.github.io".lower()
     projects: list[dict] = []
     for repo in list_owned_public_repos():
+        if repo["name"].lower() == self_repo:
+            continue
         if not repo.get("has_pages"):
             continue
         url = pages_url(repo["name"])
