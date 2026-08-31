@@ -1,8 +1,18 @@
 version: 2
 updates:
-  # Keep GitHub Actions versions current (would flag action runtime lag, e.g.
-  # the Node 20 -> 24 change).
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci
+    groups:
+      # One PR for all non-major action updates.
+      actions-minor:
+        update-types:
+          - minor
+          - patch
