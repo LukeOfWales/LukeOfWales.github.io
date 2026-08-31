@@ -89,10 +89,34 @@ def list_owned_public_repos() -> list[dict]:
 
 
 def pages_url(repo: str) -> str | None:
-    """Live Pages URL if the site is built, else None."""
-    info = api(f"/repos/{OWNER}/{repo}/pages")
-    if isinstance(info, dict) and info.get("status") == "built":
-        return info.get("html_url")
+    """Return the live Pages URL for a repo, or None if it isn't serving.
+
+    Deliberately avoids the /repos/{owner}/{repo}/pages API: that endpoint
+    requires a token with Pages access on each repo, which the CI GITHUB_TOKEN
+    doesn't have for *other* repos. Instead we rely on `has_pages` from the
+    (public, unauthenticated) repo listing to know Pages is enabled, then
+    confirm the deterministic project-site URL is actually serving with a
+    plain HTTP request.
+    """
+    # A user/org site (owner.github.io) serves at the root; a project site
+    # serves at /{repo}/.
+    if repo.lower() == f"{OWNER}.github.io".lower():
+        url = f"https://{OWNER.lower()}.github.io/"
+    else:
+        url = f"https://{OWNER.lower()}.github.io/{repo}/"
+    req = urllib.request.Request(url, method="HEAD", headers={
+        "User-Agent": "lukeofwales-hub-builder",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            if 200 <= r.status < 400:
+                return url
+    except urllib.error.HTTPError as e:
+        # A built site returns 200; some setups 404 the bare path but serve
+        # index.html — treat only clear success as live.
+        return None
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return None
     return None
 
 
